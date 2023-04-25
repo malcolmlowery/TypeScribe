@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "TypeScribe",
-    "slug": "TypeScribe",
+    "name": "expo-router-typescribe",
+    "slug": "expo-router-typescribe",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
