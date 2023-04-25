@@ -1,10 +1,18 @@
 import styled from 'styled-components/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useWindowDimensions } from 'react-native';
+import { useRouter } from 'expo-router';
 
 const Chat = () => {
+    const { height: screenHeight, width: screenWidth } = useWindowDimensions();
+
     return(
-        <Container>
-            <Text>Ai Chat Screen</Text>
-        </Container>
+        <>
+            <LinearGradient colors={['#2C2B4E', '#1F2130', '#191A23']} style={{ position: 'absolute', height: screenHeight, width: screenWidth }} />
+            <Container>
+
+            </Container>
+        </>
     )
 };
 
@@ -17,3 +25,5 @@ const Container = styled.View`
 `;
 
 const Text = styled.Text``;
+
+const TouchableOpacity = styled.TouchableOpacity``;
