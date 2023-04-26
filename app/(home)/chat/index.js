@@ -3,6 +3,7 @@ import styled from 'styled-components/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import LottieView from 'lottie-react-native';
 import { useWindowDimensions, KeyboardAvoidingView, Keyboard } from 'react-native';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useEffect, useState, useRef, useLayoutEffect } from 'react';
@@ -12,30 +13,31 @@ const Chat = () => {
     const { height: screenHeight, width: screenWidth } = useWindowDimensions();
     const headerHeight = useHeaderHeight();
     const flatlist_ref = useRef();
+    const loading_lottie_ref = useRef(null)
     const [keyboardData, setKeyboardData] = useState({ keyboardActive: false, keyboardHeight: 0 });
     const [componentHeight, setComponentHeight] = useState(0);
-    
     const [text, setText] = useState('');
     const [conversation, setConversation] = useState([]);
+    const [isFetchingResponse, setIsFetchingResponse] = useState(false);
     
     const handleSubmitQuestion = async () => {
-
         if(text === '' || text === undefined) {
             return alert('Please ask a valid question.')
         }
         
         setConversation(prevState => ([ ...prevState, { id: Math.random(), question: text }]))
-    
+        setText('')
+        setIsFetchingResponse(true)
         const completion = await openai.createChatCompletion({
             model: 'gpt-3.5-turbo',
             messages: [{role: 'user', content: text }]
         })
-        
+        setIsFetchingResponse(false)
         setConversation(prevState => ([ ...prevState, { id: Math.random(), answer: completion?.data?.choices[0].message.content }]))
-
     };
 
     useEffect(() => {
+
         const keyboardWillShowListener = Keyboard.addListener('keyboardWillShow', (listener) => {
             setKeyboardData({ keyboardActive: true, keyboardHeight: listener.endCoordinates.height })
         })
@@ -98,12 +100,27 @@ const Chat = () => {
                             </>
                         )
                     }}
+                    ListFooterComponent={() => {
+                        return(
+                            <>
+                               { isFetchingResponse &&
+                                    <LottieView
+                                        loop
+                                        onLayout={() => {loading_lottie_ref.current?.play()}}
+                                        ref={loading_lottie_ref}
+                                        style={{ alignSelf: 'center', height: 110, top: -6, width: 110 }}
+                                        source={require('../../../assets/animations/loading-anime-01.json')}
+                                    />
+                               }
+                            </>
+                        )
+                    }}
                 />
             </Container>
             
             <KeyboardAvoidingView behavior='padding' enabled={true} style={{ position: 'absolute', width: screenWidth, bottom: 0}}>
                 <SearchContainer>
-                    <BlurView intensity={100} style={{ alignItems: 'center', flex: 1, flexDirection: 'row', padding: 20, paddingBottom: !keyboardData.keyboardActive ? 50 : 20, width: screenWidth, zIndex: 999 }}>
+                    <BlurView intensity={100} style={{ alignItems: 'center', flex: 1, flexDirection: 'row', padding: 14, paddingBottom: !keyboardData.keyboardActive ? 50 : 14, width: screenWidth, zIndex: 999 }}>
                         <TextInput multiline={true} placeholder='Write anything here...' value={text} onChangeText={(value) => setText(value)} />
                         <MicrophoneButton onPress={() => handleSubmitQuestion()}>
                             <LinearGradient colors={['#8F86F1', '#71DCE1']} start={[0,0]} end={[1,0]} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -171,22 +188,22 @@ const SearchContainer = styled.View`
 const TextInput = styled.TextInput`
     background-color: #fff;
     border-radius: 30px;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 500;
     flex: 1;
     margin-right: 10px;
     max-height: 200px;
     overflow: hidden;
-    padding: 20px;
+    padding: 14px 20px;
     z-index: 1001;
 `;
 
 const MicrophoneButton = styled.TouchableOpacity`
     background-color: red;
     border-radius: 30px;
-    height: 55px;
+    height: 45px;
     overflow: hidden;
-    width: 55px;
+    width: 45px;
     z-index: 1001;
 `;
 

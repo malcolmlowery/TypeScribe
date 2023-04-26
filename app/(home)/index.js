@@ -104,7 +104,7 @@ const Index = () => {
             </Container>
 
             <BlurView intensity={40} tint='dark' style={{ height: headerHeight, position: 'absolute', width: screenWidth, zIndex: 1000 }} />
-            <BlurView intensity={40} tint='dark' style={{ height: 40, position: 'absolute', bottom: 0, width: screenWidth, zIndex: 1000 }} />
+            <BlurView intensity={40} tint='dark' style={{ height: 30, position: 'absolute', bottom: 0, width: screenWidth, zIndex: 1000 }} />
         </>
     )
 };
