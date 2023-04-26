@@ -1,13 +1,14 @@
-import 'react-native-url-polyfill/auto';
+import 'react-native-url-polyfill/auto'
 import styled from 'styled-components/native';
+import EventSource from 'react-native-sse';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import LottieView from 'lottie-react-native';
 import { useWindowDimensions, KeyboardAvoidingView, Keyboard } from 'react-native';
 import { useHeaderHeight } from '@react-navigation/elements';
-import { useEffect, useState, useRef, useLayoutEffect } from 'react';
-import { openai } from '../../../utils/chat-gpt3';
+import { useEffect, useState, useRef } from 'react';
+import LottieView from 'lottie-react-native';
+import { OPENAI_API_KEY } from '@env';
 
 const Chat = () => {
     const { height: screenHeight, width: screenWidth } = useWindowDimensions();
@@ -19,21 +20,96 @@ const Chat = () => {
     const [text, setText] = useState('');
     const [conversation, setConversation] = useState([]);
     const [isFetchingResponse, setIsFetchingResponse] = useState(false);
-    
+
     const handleSubmitQuestion = async () => {
         if(text === '' || text === undefined) {
             return alert('Please ask a valid question.')
         }
-        
+
         setConversation(prevState => ([ ...prevState, { id: Math.random(), question: text }]))
+
+      try {
         setText('')
         setIsFetchingResponse(true)
-        const completion = await openai.createChatCompletion({
-            model: 'gpt-3.5-turbo',
-            messages: [{role: 'user', content: text }]
-        })
-        setIsFetchingResponse(false)
-        setConversation(prevState => ([ ...prevState, { id: Math.random(), answer: completion?.data?.choices[0].message.content }]))
+        const message_id = Math.random()
+
+        const data = {
+            model: "gpt-3.5-turbo",
+            messages: [{ role: 'user', content: text }],
+            temperature: 0.75,
+            top_p: 0.95,
+            max_tokens: 100,
+            stream: true,
+            n: 1,
+            max_tokens: 800,
+          };
+        
+        const es = new EventSource('https://api.openai.com/v1/chat/completions', {
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${OPENAI_API_KEY}`
+            },
+            method: 'POST',
+            body: JSON.stringify(data),
+            pollingInterval: 2500
+        });
+
+        setConversation(prevState => [...prevState, { message_id }])
+    
+        const listener = (event) => {
+            if(event.type === 'open') {
+    
+            } else if(event.type === 'message') {
+                if(event.data !== '[DONE]') {
+                    const data = JSON.parse(event.data)
+                    const delta = data.choices[0].delta
+    
+                    const finish_reason = data.choices[0].finish_reason
+                    
+                    if(finish_reason === 'stop') {
+                        es.close()
+                    } else {
+                        if(delta && delta.content) {
+                            setConversation(prevState => {
+                                const updatedConversationArray = prevState.map(convo => {
+                                    if(convo.message_id === message_id) {
+                                        return({ ...convo, answer: convo.answer !== undefined ? convo.answer + delta.content : delta.content})
+                                    } else {
+                                        return convo
+                                    }
+                                })
+
+                                return updatedConversationArray
+                            })
+                        }
+                    }
+    
+                } else {
+                    es.close()
+                    setIsFetchingResponse(false)
+                }
+            } else if(event.type === 'error') {
+                setIsFetchingResponse(false)
+                console.log('Connection Error:', event.message)
+            } else if(event.type === 'exception') {
+                setIsFetchingResponse(false)
+                console.log('Error:', event.message, event.error)
+            } 
+        };
+    
+        es.addEventListener('open', listener)
+        es.addEventListener('message', listener)
+        es.addEventListener('error', listener)
+    
+        return () => {
+            es.removeEventListener()
+            es.close()
+        }
+
+      } catch(error) {
+            console.log(error)
+            setIsFetchingResponse(false)
+      }
     };
 
     useEffect(() => {
@@ -119,8 +195,8 @@ const Chat = () => {
             </Container>
             
             <KeyboardAvoidingView behavior='padding' enabled={true} style={{ position: 'absolute', width: screenWidth, bottom: 0}}>
-                <SearchContainer>
-                    <BlurView intensity={100} style={{ alignItems: 'center', flex: 1, flexDirection: 'row', padding: 14, paddingBottom: !keyboardData.keyboardActive ? 50 : 14, width: screenWidth, zIndex: 999 }}>
+                <SearchContainer style={{ bottom: !keyboardData.keyboardActive && 30 }}>
+                    <BlurView intensity={100} style={{ alignItems: 'center', flex: 1, flexDirection: 'row', padding: 20, margin: 20, borderRadius: 20, overflow: 'hidden', width: screenWidth, zIndex: 999 }}>
                         <TextInput multiline={true} placeholder='Write anything here...' value={text} onChangeText={(value) => setText(value)} />
                         <MicrophoneButton onPress={() => handleSubmitQuestion()}>
                             <LinearGradient colors={['#8F86F1', '#71DCE1']} start={[0,0]} end={[1,0]} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -183,6 +259,7 @@ const Answer = styled.View`
 const SearchContainer = styled.View`
     align-items: center;
     flex-direction: row;
+    box-shadow: -4px 0 80px rgba(0,0,0,0.1);
 `;
 
 const TextInput = styled.TextInput`
