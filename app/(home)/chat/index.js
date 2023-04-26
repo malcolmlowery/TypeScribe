@@ -1,13 +1,54 @@
+import 'react-native-url-polyfill/auto';
 import styled from 'styled-components/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useWindowDimensions } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { useWindowDimensions, KeyboardAvoidingView, Keyboard } from 'react-native';
 import { useHeaderHeight } from '@react-navigation/elements';
-import { useRouter } from 'expo-router';
+import { useEffect, useState, useRef, useLayoutEffect } from 'react';
+import { openai } from '../../../utils/chat-gpt3';
 
 const Chat = () => {
     const { height: screenHeight, width: screenWidth } = useWindowDimensions();
     const headerHeight = useHeaderHeight();
+    const flatlist_ref = useRef();
+    const [keyboardData, setKeyboardData] = useState({ keyboardActive: false, keyboardHeight: 0 });
+    const [componentHeight, setComponentHeight] = useState(0);
+    
+    const [text, setText] = useState('');
+    const [conversation, setConversation] = useState([]);
+    
+    const handleSubmitQuestion = async () => {
+
+        if(text === '' || text === undefined) {
+            return alert('Please ask a valid question.')
+        }
+        
+        setConversation(prevState => ([ ...prevState, { id: Math.random(), question: text }]))
+    
+        const completion = await openai.createChatCompletion({
+            model: 'gpt-3.5-turbo',
+            messages: [{role: 'user', content: text }]
+        })
+        
+        setConversation(prevState => ([ ...prevState, { id: Math.random(), answer: completion?.data?.choices[0].message.content }]))
+
+    };
+
+    useEffect(() => {
+        const keyboardWillShowListener = Keyboard.addListener('keyboardWillShow', (listener) => {
+            setKeyboardData({ keyboardActive: true, keyboardHeight: listener.endCoordinates.height })
+        })
+        const keyboardWillHideListener = Keyboard.addListener('keyboardWillHide', () => {
+            setKeyboardData({ keyboardActive: false, keyboardHeight: 0 })
+        })
+
+        return () => {false
+            keyboardWillShowListener.remove()
+            keyboardWillHideListener.remove()
+        }
+
+    }, [keyboardData])
 
     return(
         <>
@@ -15,39 +56,63 @@ const Chat = () => {
             
             <Container style={{ top: headerHeight + 30 }}>
                 <LinearGradient colors={['#D3D5DC', '#F1F5F8', '#F0F4F7']} style={{ position: 'absolute', height: screenHeight, width: screenWidth }} />
-                <ScrollView>
-                    <Question>
-                        <ProfileImage source={{ uri: 'https://malcolmlowery.github.io/assets/profile-images/5EBF628C-D935-4F3F-B341-173E59E7E6CC.jpg' }} />
-                        <LinearGradient colors={['#333439', '#191A23']} start={[0,0]} end={[1,0]} style={{ borderRadius: 20, borderTopRightRadius: 0, flex: 1, padding: 20 }}>
-                            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15, lineHeight: 20 }}>What is digital abstract design and find 3 examples of abstract design</Text>
-                            <Options>
-                                <OptionItem>
-                                    <Ionicons color='#fff' name='create-outline' size={15} />
-                                    <Text style={{ color: '#fff', marginLeft: 6 }}>Edit</Text>
-                                </OptionItem>
-                                <OptionItem>
-                                    <Ionicons color='#fff' name='copy-outline' size={15} />
-                                    <Text style={{ color: '#fff', marginLeft: 6 }}>Copy</Text>
-                                </OptionItem>
-                            </Options>
-                        </LinearGradient>
-                    </Question>
-
-                    <Answer>
-                        <Text style={{ color: '#000', fontWeight: '400', fontSize: 15, lineHeight: 22 }}>
-                            Digital abstract design refers to artwork or design that does not represent recognizable 
-                            objects from the physical world, but rather focuses on using shapes, colors, patterns, and 
-                            textures to create a visually appealing and often unconventional composition. It is often 
-                            characterized by its non-representational and non-literal nature, allowing for creative 
-                            freedom and experimentation.
-                        </Text>
-                        <OptionItem style={{ alignSelf: 'flex-end', marginRight: 0 }}>
-                            <Ionicons color='#000' name='copy-outline' size={15} />
-                            <Text style={{ color: '#000', marginLeft: 6 }}>Copy</Text>
-                        </OptionItem>
-                    </Answer>
-                </ScrollView>
+                <FlatList 
+                    ref={flatlist_ref}
+                    data={[...conversation]}
+                    contentInset={{ bottom: 350 }}
+                    showsVerticalScrollIndicator={false}
+                    getItemLayout={(item, index) => ({ length: componentHeight, offset: componentHeight * index * 2.9, index: index })}
+                    renderItem={({ item, index }) => {
+                        flatlist_ref?.current?.scrollToIndex({ index: conversation.length - 1 })
+                        return(
+                            <>
+                                {item.question &&
+                                    <Question onLayout={(event) => setComponentHeight(event.nativeEvent.layout.height)} style={{ marginTop: index > 1 && 14 }}>
+                                        <ProfileImage source={{ uri: 'https://malcolmlowery.github.io/assets/profile-images/5EBF628C-D935-4F3F-B341-173E59E7E6CC.jpg' }} />
+                                        <LinearGradient colors={['#333439', '#191A23']} start={[0,0]} end={[1,0]} style={{ borderRadius: 20, borderTopRightRadius: 0, flex: 1, padding: 20 }}>
+                                            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15, lineHeight: 20 }}>{item.question}</Text>
+                                            <Options>
+                                                <OptionItem>
+                                                    <Ionicons color='#fff' name='create-outline' size={15} />
+                                                    <Text style={{ color: '#fff', marginLeft: 6 }}>Edit</Text>
+                                                </OptionItem>
+                                                <OptionItem>
+                                                    <Ionicons color='#fff' name='copy-outline' size={15} />
+                                                    <Text style={{ color: '#fff', marginLeft: 6 }}>Copy</Text>
+                                                </OptionItem>
+                                            </Options>
+                                        </LinearGradient>
+                                    </Question>
+                                }
+                                { item.answer &&
+                                    <Answer onLayout={(event) => setComponentHeight(event.nativeEvent.layout.height)}>
+                                        <Text style={{ color: '#000', fontWeight: '400', fontSize: 15, lineHeight: 22 }}>
+                                            {item.answer}
+                                        </Text>
+                                        <OptionItem style={{ alignSelf: 'flex-end', marginRight: 0 }}>
+                                            <Ionicons color='#000' name='copy-outline' size={15} />
+                                            <Text style={{ color: '#000', marginLeft: 6 }}>Copy</Text>
+                                        </OptionItem>
+                                    </Answer>
+                                }
+                            </>
+                        )
+                    }}
+                />
             </Container>
+            
+            <KeyboardAvoidingView behavior='padding' enabled={true} style={{ position: 'absolute', width: screenWidth, bottom: 0}}>
+                <SearchContainer>
+                    <BlurView intensity={100} style={{ alignItems: 'center', flex: 1, flexDirection: 'row', padding: 20, paddingBottom: !keyboardData.keyboardActive ? 50 : 20, width: screenWidth, zIndex: 999 }}>
+                        <TextInput multiline={true} placeholder='Write anything here...' value={text} onChangeText={(value) => setText(value)} />
+                        <MicrophoneButton onPress={() => handleSubmitQuestion()}>
+                            <LinearGradient colors={['#8F86F1', '#71DCE1']} start={[0,0]} end={[1,0]} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                                <Ionicons color='#fff' name='paper-plane' size={20} style={{ left: -2 }} />
+                            </LinearGradient>
+                        </MicrophoneButton>
+                    </BlurView>
+                </SearchContainer>
+            </KeyboardAvoidingView>
         </>
     )
 };
@@ -56,7 +121,6 @@ export default Chat;
 
 const Container = styled.View`
     align-items: center;
-    background-color: #fff;
     border-top-right-radius: 30px;
     border-top-left-radius: 30px;
     flex: 1;
@@ -64,7 +128,7 @@ const Container = styled.View`
     overflow: hidden;
 `;
 
-const ScrollView = styled.ScrollView`
+const FlatList = styled.FlatList`
     flex: 1;
     padding: 20px;
     width: 100%;
@@ -97,6 +161,33 @@ const Answer = styled.View`
     border-radius: 20px;
     margin-top: 15px;
     padding: 20px;
+`;
+
+const SearchContainer = styled.View`
+    align-items: center;
+    flex-direction: row;
+`;
+
+const TextInput = styled.TextInput`
+    background-color: #fff;
+    border-radius: 30px;
+    font-size: 15px;
+    font-weight: 500;
+    flex: 1;
+    margin-right: 10px;
+    max-height: 200px;
+    overflow: hidden;
+    padding: 20px;
+    z-index: 1001;
+`;
+
+const MicrophoneButton = styled.TouchableOpacity`
+    background-color: red;
+    border-radius: 30px;
+    height: 55px;
+    overflow: hidden;
+    width: 55px;
+    z-index: 1001;
 `;
 
 const Text = styled.Text``;

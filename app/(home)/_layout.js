@@ -59,6 +59,7 @@ const HeaderIcon = styled.Image`
 
 const Text = styled.Text`
     color: #fff;
+    font-size: 18px;
     font-weight: 600;
     top: -15px;
 `;
