@@ -130,10 +130,13 @@ const Chat = () => {
 
     return(
         <>
-            <LinearGradient colors={['#2C2B4E', '#1F2130', '#191A23']} style={{ position: 'absolute', height: screenHeight, width: screenWidth }} />
+            <BackgroundContainer>
+                <BlurView intensity={100} tint='dark' style={{ flex: 1, position: 'absolute', height: screenHeight, opacity: 0.9, width: screenWidth, zIndex: 101 }} />
+                <BackgroundImage source={{ uri: '/Users/malcolmlowery/Desktop/TypeScribe/assets/backgrounds/grid_0.png' }} />
+            </BackgroundContainer>
             
-            <Container style={{ top: headerHeight + 30 }}>
-                <LinearGradient colors={['#D3D5DC', '#F1F5F8', '#F0F4F7']} style={{ position: 'absolute', height: screenHeight, width: screenWidth }} />
+            <Container style={{ top: headerHeight + 20 }}>
+                <LinearGradient colors={['#D3D5DC', '#F1F5F8', '#F0F4F7']} style={{ position: 'absolute', height: screenHeight, width: screenWidth, opacity: 0.7 }} />
                 <FlatList 
                     ref={flatlist_ref}
                     data={[...conversation]}
@@ -145,7 +148,7 @@ const Chat = () => {
                         return(
                             <>
                                 {item.question &&
-                                    <Question onLayout={(event) => setComponentHeight(event.nativeEvent.layout.height)} style={{ marginTop: index > 1 && 14 }}>
+                                    <Question onLayout={(event) => setComponentHeight(event.nativeEvent.layout.height)} style={{ marginTop: index > 1 && 14, top: 3 }}>
                                         <ProfileImage source={{ uri: 'https://malcolmlowery.github.io/assets/profile-images/5EBF628C-D935-4F3F-B341-173E59E7E6CC.jpg' }} />
                                         <LinearGradient colors={['#333439', '#191A23']} start={[0,0]} end={[1,0]} style={{ borderRadius: 20, borderTopRightRadius: 0, flex: 1, padding: 20 }}>
                                             <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15, lineHeight: 20 }}>{item.question}</Text>
@@ -167,7 +170,7 @@ const Chat = () => {
                                         <Text style={{ color: '#000', fontWeight: '400', fontSize: 15, lineHeight: 22 }}>
                                             {item.answer}
                                         </Text>
-                                        <OptionItem style={{ alignSelf: 'flex-end', marginRight: 0 }}>
+                                        <OptionItem style={{ alignSelf: 'flex-end', marginRight: 0, marginTop: 6 }}>
                                             <Ionicons color='#000' name='copy-outline' size={15} />
                                             <Text style={{ color: '#000', marginLeft: 6 }}>Copy</Text>
                                         </OptionItem>
@@ -212,10 +215,24 @@ const Chat = () => {
 
 export default Chat;
 
+const BackgroundContainer = styled.View`
+    bottom: 0;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+`;
+
+const BackgroundImage = styled.Image`
+    flex: 1;
+    position: relative;
+    z-index: 100;
+`;
+
 const Container = styled.View`
     align-items: center;
-    border-top-right-radius: 30px;
-    border-top-left-radius: 30px;
+    border-top-right-radius: 40px;
+    border-top-left-radius: 40px;
     flex: 1;
     justify-content: center;
     overflow: hidden;

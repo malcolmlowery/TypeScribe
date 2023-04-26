@@ -13,7 +13,10 @@ const Index = () => {
     
     return(
         <>
-            <LinearGradient colors={['#2C2B4E', '#1F2130', '#191A23']} style={{ position: 'absolute', height: screenHeight, width: screenWidth }} />
+            <BackgroundContainer>
+                <BlurView intensity={100} tint='dark' style={{ flex: 1, position: 'absolute', height: screenHeight, width: screenWidth, zIndex: 101 }} />
+                <BackgroundImage source={{ uri: '/Users/malcolmlowery/Desktop/TypeScribe/assets/backgrounds/grid_0.png' }} />
+            </BackgroundContainer>
 
             <Container style={{ paddingTop: headerHeight }}>
                 <ScrollView showsVerticalScrollIndicator={false} contentInset={{ bottom: 100 }}>
@@ -46,7 +49,7 @@ const Index = () => {
                                     </GrayIcon>
                                     <Spacer />
                                     <CardFooter>
-                                        <Text style={{ fontSize: 15, lineHeight: 22, width: 100 }}>Start New Chat</Text>
+                                        <Text style={{ fontSize: 15, lineHeight: 19, width: 100 }}>Start New Chat</Text>
                                         <Ionicons color='#fff' name='arrow-forward' size={25} style={{ flex: 1, position: 'absolute', right: 0, bottom: 0 }} />
                                     </CardFooter>
                                 </Card>
@@ -59,7 +62,7 @@ const Index = () => {
                                     </GrayIcon>
                                     <Spacer />
                                     <CardFooter>
-                                        <Text style={{ fontSize: 15, lineHeight: 22, width: 100 }}>Search by image</Text>
+                                        <Text style={{ fontSize: 15, lineHeight: 19, width: 100 }}>Search by image</Text>
                                         <Ionicons color='#fff' name='arrow-forward' size={25} style={{ flex: 1, position: 'absolute', right: 0, bottom: 0 }} />
                                     </CardFooter>
                                 </Card>
@@ -111,6 +114,20 @@ const Index = () => {
 
 export default Index;
 
+const BackgroundContainer = styled.View`
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: 0;
+`;
+
+const BackgroundImage = styled.Image`
+    flex: 1;
+    position: relative;
+    z-index: 100;
+`;
+
 const Container = styled.View`
     flex: 1;
     margin: 0 26px;
@@ -142,11 +159,11 @@ const HelpSectionRightSide = styled.View`
 `;
 
 const Card = styled.View`
-    background-color: rgba(90, 90, 90, 0.15);
+    background-color: rgba(255, 255, 255, 0.24);
     border-radius: 20px;
-    border-color: #42424B;
-    border-style: solid;
-    border-width: 1px;
+    /* border-color: #BABABA; */
+    /* border-style: solid;
+    border-width: 1px; */
     flex: 1;
     padding: 16px;
     position: relative;
@@ -168,11 +185,11 @@ const CardBackground = styled.Image`
 
 const GrayIcon = styled.View`
     align-items: center;
-    background-color: rgba(90, 90, 90, 0.85);
+    background-color: rgba(255, 255, 255, 0.35);
     border-radius: 40px;
-    border-color: #61626B;
+    /* border-color: #9A9A9A;
     border-style: solid;
-    border-width: 1px;
+    border-width: 1px; */
     justify-content: center;
     left: 14px;
     padding: 10px;
@@ -182,11 +199,11 @@ const GrayIcon = styled.View`
 
 const LightGrayIcon = styled.View`
     align-items: center;
-    background-color: rgba(180, 180, 180, 0.31);
+    background-color: rgba(255, 255, 255, 0.35);
     border-radius: 40px;
-    border-color: rgba(170, 170, 170, 0.2);
+    /* border-color: #9A9A9A;
     border-style: solid;
-    border-width: 1px;
+    border-width: 1px; */
     height: 50px;
     justify-content: center;
     padding: 10px;
